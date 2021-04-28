@@ -1,4 +1,4 @@
-##Payments application
+## Payments application
 ### Installation
 * #### Clone this repository
 * #### In you terminal paste -  *mvnw clean package spring-boot:run*
