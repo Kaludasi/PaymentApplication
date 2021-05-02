@@ -18,14 +18,4 @@ public class PaymentMapper {
                 paymentDTO.getDebtorIban(),
                 paymentDTO.getLocation());
     }
-
-    /**
-     * Function maps PaymentDTO to Payment
-     * */
-    public static PaymentDTO map(Payment payment) {
-        return EntityFactory.getPaymentDTO(
-                payment.getAmount(),
-                payment.getDebtorIban(),
-                payment.getLocation());
-    }
 }

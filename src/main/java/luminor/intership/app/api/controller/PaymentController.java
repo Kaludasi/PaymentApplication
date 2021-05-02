@@ -15,7 +15,6 @@ import org.springframework.util.Assert;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -44,15 +43,15 @@ public class PaymentController implements PaymentAPI {
 
     @Override
     public String create(PaymentDTO paymentDTO, Model model, BindingResult bindingResult, HttpServletRequest request) {
-        String location = "";
-        location = getRequestLocation(request, location);
-        paymentDTO.setLocation(location);
         paymentValidator.validate(paymentDTO, bindingResult);
+        model.addAttribute("bindingResult", bindingResult.hasErrors());
         if (bindingResult.hasErrors()) {
             model.addAttribute("payment", new PaymentDTO());
-            model.addAttribute("error",bindingResult.getAllErrors().get(0).getCode());
-            return "payment";
+            model.addAttribute("error", bindingResult.getAllErrors().get(0).getCode());
+            return "paymentTemplate";
         }
+        String location = getRequestLocation(request);
+        paymentDTO.setLocation(location);
         paymentService.createPayment(PaymentMapper.map(paymentDTO));
         return "redirect:/payments";
     }
@@ -61,13 +60,12 @@ public class PaymentController implements PaymentAPI {
     public String getPaymentForm(Model model) {
         model.addAttribute("payment", new PaymentDTO());
         model.addAttribute("error",null);
-        return "payment";
+        return "paymentTemplate";
     }
 
     @Override
     public String createFromCSV(MultipartFile file, Model model, HttpServletRequest request) {
-        String location = "";
-        location = getRequestLocation(request, location);
+        String location = getRequestLocation(request);
         List<PaymentDTO> payments = Utils.parseCSV(file);
         if (payments != null) {
             for (PaymentDTO paymentDTO : payments) {
@@ -78,14 +76,14 @@ public class PaymentController implements PaymentAPI {
                     model.addAttribute("iban", paymentDTO.getDebtorIban());
                     model.addAttribute("amount", paymentDTO.getAmount());
                     model.addAttribute("error", bindingResult.getAllErrors().get(0).getCode());
-                    return "invalidFile";
+                    return "invalidFileTemplate";
                 }
                 paymentDTO.setLocation(location);
                 paymentService.createPayment(PaymentMapper.map(paymentDTO));
             }
         } else {
             model.addAttribute("error", List.of("Invalid file"));
-            return "paymentCSV";
+            return "paymentCsvTemplate";
         }
         return "redirect:/payments";
     }
@@ -95,7 +93,8 @@ public class PaymentController implements PaymentAPI {
      * then parses json data to PersonData object
      * @return usersLocation
      * */
-    public String getRequestLocation(HttpServletRequest request, String location) {
+    public String getRequestLocation(HttpServletRequest request) {
+        String location = "";
         if (request.getHeader("X-FORWARDED-FOR") != null) {
             try {
                 URL url = new URL("http://ip-api.com/json/" + request.getHeader("X-FORWARDED-FOR"));
@@ -120,7 +119,7 @@ public class PaymentController implements PaymentAPI {
 
     @Override
     public String getPaymentFilesForm(Model model) {
-        return "paymentCSV";
+        return "paymentCsvTemplate";
     }
 
     @Override
@@ -131,6 +130,6 @@ public class PaymentController implements PaymentAPI {
             model.addAttribute("payments", paymentService.getByDebtorIban(debtorIban.get()));
         }
         model.addAttribute("debtorIban", "");
-        return "payments";
+        return "paymentsTemplate";
     }
 }
